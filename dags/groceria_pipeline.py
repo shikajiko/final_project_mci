@@ -1,12 +1,12 @@
 from airflow import DAG
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 
 from datetime import datetime
 
 with DAG(
     dag_id="groceria_pipeline",
-    start_date=datetime(2025,1,1),
+    start_date=datetime(2025, 1, 1),
     schedule=None,
     catchup=False
 ) as dag:
@@ -15,85 +15,77 @@ with DAG(
         task_id="start"
     )
 
-    ingest_orders = SparkSubmitOperator(
+    ingest_orders = BashOperator(
         task_id="ingest_orders",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/orders.csv",
-            "raw.orders"
-        ]
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/orders.csv raw.orders"
+        )
     )
 
-    ingest_customers = SparkSubmitOperator(
+    ingest_customers = BashOperator(
         task_id="ingest_customers",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/customers.csv",
-            "raw.customers"
-        ]
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/customers.csv raw.customers"
+        )
     )
 
-    ingest_geolocation = SparkSubmitOperator(
+    ingest_geolocation = BashOperator(
         task_id="ingest_geolocation",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/geolocation.csv",
-            "raw.geolocation"
-        ]
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/geolocation.csv raw.geolocation"
+        )
     )
 
-    ingest_payments = SparkSubmitOperator(
+    ingest_payments = BashOperator(
         task_id="ingest_payments",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/order_payments.csv",
-            "raw.order_payments"
-        ]
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/order_payments.csv raw.order_payments"
+        )
     )
 
-    ingest_products = SparkSubmitOperator(
+    ingest_products = BashOperator(
         task_id="ingest_products",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/products.csv",
-            "raw.products"
-        ]
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/products.csv raw.products"
+        )
     )
 
-    ingest_reviews = SparkSubmitOperator(
+    ingest_reviews = BashOperator(
         task_id="ingest_reviews",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/order_reviews.csv",
-            "raw.order_reviews"
-        ]
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/order_reviews.csv raw.order_reviews"
+        )
     )
 
-    ingest_items = SparkSubmitOperator(
+    ingest_items = BashOperator(
         task_id="ingest_items",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/order_items.csv",
-            "raw.order_items"
-        ]
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/order_items.csv raw.order_items"
+        )
     )
 
-    ingest_sellers = SparkSubmitOperator(
+    ingest_sellers = BashOperator(
         task_id="ingest_sellers",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/sellers.csv",
-            "raw.sellers"
-        ]
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/sellers.csv raw.sellers"
+        )
     )
 
-    ingest_translation = SparkSubmitOperator(
+    ingest_translation = BashOperator(
         task_id="ingest_translation",
-        application="/opt/airflow/spark_jobs/ingest/load_csv_to_raw.py",
-        application_args=[
-            "/datasets/product_category_translation.csv",
+        bash_command=(
+            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "/datasets/product_category_translation.csv "
             "raw.product_category_translation"
-        ]
+        )
     )
 
     end = EmptyOperator(
