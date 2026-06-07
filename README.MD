@@ -9,4 +9,4 @@ note on ods:
 3. payments is obtained from the raw order payments, with the derived column:
     a. is_installment to identify whether the customer paid in installments or all at once.
     b. installment_bucket to group installment counts into categories
-    c. is_high_value_payment derived from payment_value and is true on payment value greater than 500 
+    c. is_high_value_payment derived from payment_value and is true on payment value greater within top 25% 

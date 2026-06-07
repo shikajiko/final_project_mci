@@ -25,11 +25,19 @@ df = (
          .when(F.col("payment_installments") <= 12, F.lit("7-12"))
          .otherwise(F.lit("12+"))
     )
-    .withColumn(
-        "is_high_value_payment",
-        F.when(F.col("payment_value") >= 500, 1).otherwise(0)
-    )
     .filter(F.col("order_id").isNotNull() & (F.col("order_id") != ""))
+)
+
+stats = df.select(
+    F.expr("percentile_approx(payment_value, 0.75)").alias("p75"),
+    F.expr("percentile_approx(payment_value, 0.90)").alias("p90"),
+).collect()[0]
+
+threshold = stats["p75"]
+
+df = df.withColumn(
+    "is_high_value_payment",
+    F.when(F.col("payment_value") >= threshold, 1).otherwise(0)
 )
 
 client_ods.command("TRUNCATE TABLE IF EXISTS ods.order_payments")
