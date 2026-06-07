@@ -20,3 +20,7 @@ note on ods layer:
 5. The ODS order_items table is created from the raw order_items table by standardizing data types, converting shipping_limit_date to a timestamp, and deriving additional metrics related to item cost and shipping. The derived fields include line_total (item price plus freight cost) and freight_ratio (freight cost as a proportion of item price). Records with missing or empty order_id values are removed to ensure data quality.
 
 note on dwh layer:
+1. there are two kinds of tables, dimension and facts. the dimension tables are:
+    a. dim_customer: created from ODS customer tables. it contains customer identifiers, locations, and geographic coordinates
+    b. dim_date: created from order purchase dates in the ODS orders table. derive it into granular columns like date, year, quartet, month, month_name, day, etc
+    c. dim_payment_method: created from distinct payment types from the ods order payments table
