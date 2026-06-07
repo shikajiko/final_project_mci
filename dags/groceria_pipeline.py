@@ -83,7 +83,7 @@ with DAG(
         task_id="ingest_translation",
         bash_command=(
             "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
-            "/datasets/product_category_translation.csv "
+            "/datasets/category_translation.csv "
             "raw.product_category_translation"
         )
     )

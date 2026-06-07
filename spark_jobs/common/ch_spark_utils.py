@@ -1,7 +1,13 @@
-CLICKHOUSE_URL = "jdbc:clickhouse://clickhouse:8123"
+from pyspark.sql import SparkSession
 
 CLICKHOUSE_PROPERTIES = {
-    "driver": "com.clickhouse.jdbc.ClickHouseDriver",
     "user": "admin",
     "password": "rahasia"
 }
+
+def get_spark():
+    return (
+        SparkSession.builder
+        .appName("groceria")
+        .getOrCreate()
+    )

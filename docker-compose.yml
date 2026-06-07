@@ -15,6 +15,7 @@ x-airflow-common:
     - ./dags:/opt/airflow/dags
     - ./spark_jobs:/opt/airflow/spark_jobs
     - ./datasets:/datasets
+    - ./jars:/opt/airflow/jars
 
   depends_on:
     postgres:
