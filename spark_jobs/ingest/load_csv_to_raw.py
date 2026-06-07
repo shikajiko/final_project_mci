@@ -21,6 +21,9 @@ df = (
     spark.read
     .option("header", True)
     .option("inferSchema", False)
+    .option("multiLine", True)        
+    .option("quote", '"')             
+    .option("escape", '"')            
     .csv(csv_path)
 )
 

@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS raw.order_payments (
     payment_value Nullable(String)
 )
 ENGINE = MergeTree
-ORDER BY (order_id);
+ORDER BY order_id;
 
 CREATE TABLE IF NOT EXISTS raw.customers (
     customer_id String,
@@ -54,7 +54,7 @@ ENGINE = MergeTree
 ORDER BY (order_id, order_item_id);
 
 CREATE TABLE IF NOT EXISTS raw.order_reviews (
-    review_id String,
+    review_id Nullable(String),
     order_id Nullable(String),
     review_score Nullable(String),
     review_comment_title Nullable(String),
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS raw.order_reviews (
     review_answer_timestamp Nullable(String)
 )
 ENGINE = MergeTree
-ORDER BY review_id;
+ORDER BY (assumeNotNull(review_id), assumeNotNull(order_id));
 
 CREATE TABLE IF NOT EXISTS raw.products (
     product_id String,
@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS raw.products (
     product_description_lenght Nullable(String),
     product_photos_qty Nullable(String),
     product_weight_g Nullable(String),
+    product_height_cm Nullable(String),
     product_length_cm Nullable(String),
     product_width_cm Nullable(String)
 )
