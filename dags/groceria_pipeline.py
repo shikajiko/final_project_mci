@@ -5,6 +5,9 @@ from airflow.operators.python import PythonOperator
 from utils.dq_checks import run_all_checks
 from datetime import datetime
 
+LOAD_CSV = "/opt/airflow/spark_jobs/ingestion/load_csv_to_raw.py"
+TRANSFORM = "/opt/airflow/spark_jobs/transform"
+
 with DAG(
     dag_id="groceria_pipeline",
     start_date=datetime(2025, 1, 1),
@@ -19,7 +22,7 @@ with DAG(
     ingest_orders = BashOperator(
         task_id="ingest_orders",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/orders.csv raw.orders"
         )
     )
@@ -27,7 +30,7 @@ with DAG(
     ingest_customers = BashOperator(
         task_id="ingest_customers",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/customers.csv raw.customers"
         )
     )
@@ -35,7 +38,7 @@ with DAG(
     ingest_geolocation = BashOperator(
         task_id="ingest_geolocation",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/geolocation.csv raw.geolocation"
         )
     )
@@ -43,7 +46,7 @@ with DAG(
     ingest_payments = BashOperator(
         task_id="ingest_payments",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/order_payments.csv raw.order_payments"
         )
     )
@@ -51,7 +54,7 @@ with DAG(
     ingest_products = BashOperator(
         task_id="ingest_products",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/products.csv raw.products"
         )
     )
@@ -59,7 +62,7 @@ with DAG(
     ingest_reviews = BashOperator(
         task_id="ingest_reviews",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/order_reviews.csv raw.order_reviews"
         )
     )
@@ -67,7 +70,7 @@ with DAG(
     ingest_items = BashOperator(
         task_id="ingest_items",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/order_items.csv raw.order_items"
         )
     )
@@ -75,7 +78,7 @@ with DAG(
     ingest_sellers = BashOperator(
         task_id="ingest_sellers",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/sellers.csv raw.sellers"
         )
     )
@@ -83,7 +86,7 @@ with DAG(
     ingest_translation = BashOperator(
         task_id="ingest_translation",
         bash_command=(
-            "python /opt/airflow/spark_jobs/ingest/load_csv_to_raw.py "
+            "python {LOAD_CSV} "
             "/datasets/category_translation.csv "
             "raw.product_category_translation"
         )
@@ -93,6 +96,26 @@ with DAG(
         task_id="run_dq_checks",
         python_callable=run_all_checks,
         op_args=["raw"]
+    )
+
+    transform_orders = BashOperator(
+        task_id="transform_orders",
+        bash_command=f"spark-submit {TRANSFORM}/transform_orders.py"
+    )
+
+    transform_payments = BashOperator(
+        task_id="transform_payments",
+        bash_command=f"spark-submit {TRANSFORM}/transform_payments.py"
+    )
+
+    transform_items = BashOperator(
+        task_id="transform_items",
+        bash_command=f"spark-submit {TRANSFORM}/transform_items.py"
+    )
+
+    transform_customers = BashOperator(
+        task_id="transform_customers",
+        bash_command=f"spark-submit {TRANSFORM}/transform_customers.py"
     )
 
     end = EmptyOperator(
@@ -109,4 +132,9 @@ with DAG(
         ingest_items,
         ingest_sellers,
         ingest_translation
-    ] >> run_dq_checks >> end
+    ] >> run_dq_checks >> [
+        transform_orders,
+        transform_payments,
+        transform_items,
+        transform_customers,
+    ] >> end

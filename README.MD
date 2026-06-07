@@ -10,4 +10,5 @@ note on ods layer:
     a. is_installment to identify whether the customer paid in installments or all at once.
     b. installment_bucket to group installment counts into categories
     c. is_high_value_payment derived from payment_value and is true on payment value greater within top 25% 
-4. customers is obtained by combining raw customers table with raw geolocation tables. it has derived field oh latitude and longitude coordinate and zip code for grouping
+4. The customers ODS table expand the customer records with representative latitude and longitude coordinates derived from the geolocation dataset. Geolocation records are cleaned aggregated by ZIP code prefix, and joined to customers via customer_zip_code_prefix.
+5. The ODS order_items table is created from the raw order_items table by standardizing data types, converting shipping_limit_date to a timestamp, and deriving additional metrics related to item cost and shipping. The derived fields include line_total (item price plus freight cost) and freight_ratio (freight cost as a proportion of item price). Records with missing or empty order_id values are removed to ensure data quality.
