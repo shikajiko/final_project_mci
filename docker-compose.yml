@@ -62,6 +62,8 @@ services:
     env_file: .env
     environment:
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
     volumes:
       - ./clickhouse:/docker-entrypoint-initdb.d
 

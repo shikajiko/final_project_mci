@@ -5,8 +5,10 @@ from airflow.operators.python import PythonOperator
 from utils.dq_checks import run_all_checks
 from datetime import datetime
 
-LOAD_CSV = "/opt/airflow/spark_jobs/ingestion/load_csv_to_raw.py"
-TRANSFORM = "/opt/airflow/spark_jobs/transform"
+SPARK_JOBS = "/opt/airflow/spark_jobs"
+LOAD_CSV   = f"{SPARK_JOBS}/ingest/load_csv_to_raw.py"
+DATASETS   = "/datasets"
+TRANSFORM = f"{SPARK_JOBS}/transform"
 
 with DAG(
     dag_id="groceria_pipeline",
@@ -15,82 +17,46 @@ with DAG(
     catchup=False
 ) as dag:
 
-    start = EmptyOperator(
-        task_id="start"
-    )
+    start = EmptyOperator(task_id="start")
 
     ingest_orders = BashOperator(
         task_id="ingest_orders",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/orders.csv raw.orders"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/orders.csv raw.orders"
     )
 
     ingest_customers = BashOperator(
         task_id="ingest_customers",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/customers.csv raw.customers"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/customers.csv raw.customers"
     )
-
     ingest_geolocation = BashOperator(
         task_id="ingest_geolocation",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/geolocation.csv raw.geolocation"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/geolocation.csv raw.geolocation"
     )
-
     ingest_payments = BashOperator(
         task_id="ingest_payments",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/order_payments.csv raw.order_payments"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/order_payments.csv raw.order_payments"
     )
-
     ingest_products = BashOperator(
         task_id="ingest_products",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/products.csv raw.products"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/products.csv raw.products"
     )
-
     ingest_reviews = BashOperator(
         task_id="ingest_reviews",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/order_reviews.csv raw.order_reviews"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/order_reviews.csv raw.order_reviews"
     )
-
     ingest_items = BashOperator(
         task_id="ingest_items",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/order_items.csv raw.order_items"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/order_items.csv raw.order_items"
     )
-
     ingest_sellers = BashOperator(
         task_id="ingest_sellers",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/sellers.csv raw.sellers"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/sellers.csv raw.sellers"
     )
-
     ingest_translation = BashOperator(
         task_id="ingest_translation",
-        bash_command=(
-            "python {LOAD_CSV} "
-            "/datasets/category_translation.csv "
-            "raw.product_category_translation"
-        )
+        bash_command=f"python {LOAD_CSV} {DATASETS}/category_translation.csv raw.product_category_translation"
     )
+
 
     run_dq_checks = PythonOperator(
         task_id="run_dq_checks",
