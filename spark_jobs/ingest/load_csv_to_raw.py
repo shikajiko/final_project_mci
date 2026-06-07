@@ -1,9 +1,6 @@
 import sys
 import os
 
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from common.ch_spark_utils import CLICKHOUSE_PROPERTIES, get_spark, get_client
 
 csv_path = sys.argv[1]

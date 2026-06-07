@@ -91,7 +91,8 @@ with DAG(
 
     run_dq_checks = PythonOperator(
         task_id="run_dq_checks",
-        python_callable=run_all_checks("raw")
+        python_callable=run_all_checks,
+        op_args=["raw"]
     )
 
     end = EmptyOperator(
