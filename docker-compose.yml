@@ -1,10 +1,8 @@
-version: '3.8'
-
 x-airflow-common:
   &airflow-common
   build: .
   user: "${AIRFLOW_UID:-50000}:0"
-
+  env_file: .env
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__PARALLELISM: 3
@@ -12,13 +10,11 @@ x-airflow-common:
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__LOAD_EXAMPLES: "False"
     AIRFLOW__WEBSERVER__SECRET_KEY: groceria_secret_key
-
   volumes:
     - ./dags:/opt/airflow/dags
     - ./spark_jobs:/opt/airflow/spark_jobs
     - ./datasets:/datasets
     - ./jars:/opt/airflow/jars
-
   depends_on:
     postgres:
       condition: service_healthy
@@ -26,15 +22,12 @@ x-airflow-common:
       condition: service_started
 
 services:
-
   postgres:
     image: postgres:13
-
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
-
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
@@ -45,46 +38,36 @@ services:
     <<: *airflow-common
     command: >
       bash -c "airflow db migrate &&
-      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
     depends_on:
       postgres:
         condition: service_healthy
 
   airflow-webserver:
     <<: *airflow-common
-
     command: webserver
-
     ports:
       - "8080:8080"
 
   airflow-scheduler:
     <<: *airflow-common
-
     command: scheduler
 
   clickhouse:
     image: clickhouse/clickhouse-server:latest
-
     container_name: clickhouse
-
     ports:
       - "8123:8123"
       - "9000:9000"
-
+    env_file: .env
     environment:
-      CLICKHOUSE_USER: admin
-      CLICKHOUSE_PASSWORD: rahasia
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-
     volumes:
       - ./clickhouse:/docker-entrypoint-initdb.d
 
   metabase:
     image: metabase/metabase:latest
-
     ports:
       - "3000:3000"
-
     depends_on:
       - clickhouse

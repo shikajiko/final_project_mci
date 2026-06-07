@@ -1,7 +1,8 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
-
+from airflow.operators.python import PythonOperator
+from utils.dq_checks import run_all_checks
 from datetime import datetime
 
 with DAG(
@@ -88,6 +89,11 @@ with DAG(
         )
     )
 
+    run_dq_checks = PythonOperator(
+        task_id="run_dq_checks",
+        python_callable=run_all_checks("raw")
+    )
+
     end = EmptyOperator(
         task_id="end"
     )
@@ -102,4 +108,4 @@ with DAG(
         ingest_items,
         ingest_sellers,
         ingest_translation
-    ] >> end
+    ] >> run_dq_checks >> end

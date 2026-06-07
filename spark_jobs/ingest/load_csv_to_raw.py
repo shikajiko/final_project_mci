@@ -1,10 +1,10 @@
 import sys
 import os
-import clickhouse_connect
+
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from common.ch_spark_utils import CLICKHOUSE_PROPERTIES, get_spark
+from common.ch_spark_utils import CLICKHOUSE_PROPERTIES, get_spark, get_client
 
 csv_path = sys.argv[1]
 target_table = sys.argv[2]
@@ -27,14 +27,7 @@ df = (
     .csv(csv_path)
 )
 
-client = clickhouse_connect.get_client(
-    host="clickhouse",
-    port=8123,
-    username=CLICKHOUSE_PROPERTIES["user"],
-    password=CLICKHOUSE_PROPERTIES["password"],
-    database=db
-)
-
+client = get_client(db)
 client.insert_df(table_name, df.toPandas())
 
 spark.stop()
