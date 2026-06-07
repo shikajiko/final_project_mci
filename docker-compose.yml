@@ -1,6 +1,74 @@
+version: '3.8'
+
+x-airflow-common:
+  &airflow-common
+  build: .
+  user: "${AIRFLOW_UID:-50000}:0"
+
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    AIRFLOW__WEBSERVER__SECRET_KEY: groceria_secret_key
+
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./spark_jobs:/opt/airflow/spark_jobs
+    - ./data:/data
+
+  depends_on:
+    postgres:
+      condition: service_healthy
+    clickhouse:
+      condition: service_started
+
 services:
+
+  postgres:
+    image: postgres:13
+
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+
+  airflow-init:
+    <<: *airflow-common
+
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow users create
+      --username admin
+      --password admin
+      --firstname Admin
+      --lastname User
+      --role Admin
+      --email admin@example.com
+      "
+
+  airflow-webserver:
+    <<: *airflow-common
+
+    command: webserver
+
+    ports:
+      - "8080:8080"
+
+  airflow-scheduler:
+    <<: *airflow-common
+
+    command: scheduler
+
   clickhouse:
     image: clickhouse/clickhouse-server:latest
+
     container_name: clickhouse
 
     ports:
@@ -13,5 +81,13 @@ services:
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
 
     volumes:
-      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./clickhouse/ddl:/ddl
+      - ./clickhouse:/docker-entrypoint-initdb.d
+
+  metabase:
+    image: metabase/metabase:latest
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - clickhouse
