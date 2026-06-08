@@ -25,6 +25,7 @@ df = (
 )
 
 client = get_client(db)
+client.command(f"TRUNCATE TABLE IF EXISTS {db}.{table_name}")
 client.insert_df(table_name, df.toPandas())
 
 spark.stop()
