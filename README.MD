@@ -24,3 +24,6 @@ note on dwh layer:
     a. dim_customer: created from ODS customer tables. it contains customer identifiers, locations, and geographic coordinates
     b. dim_date: created from order purchase dates in the ODS orders table. derive it into granular columns like date, year, quartet, month, month_name, day, etc
     c. dim_payment_method: created from distinct payment types from the ods order payments table
+2. fact orders aggregate data from orders and order_items into a more descriptive table, containing complete information from order id, customer id to how long the item is delivered. While not directly build from dims here, both facts and dims will be used during analysist on the metabase to provide meaningful insight
+3. similar to fact orders, fact payments aggregate customers, payments, orders, and locations into a single table to provide easier query and analysis
+
