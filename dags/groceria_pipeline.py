@@ -10,6 +10,7 @@ LOAD_CSV    = f"{SPARK_JOBS}/ingest/load_csv_to_raw.py"
 DATASETS    = "/datasets"
 TRANSFORM   = f"{SPARK_JOBS}/transform"
 DWH         = f"{SPARK_JOBS}/build"
+MART        = f"{SPARK_JOBS}/mart"
 
 with DAG(
     dag_id="groceria_pipeline",
@@ -79,6 +80,9 @@ with DAG(
         task_id="transform_customers",
         bash_command=f"spark-submit {TRANSFORM}/transform_customers.py"
     )
+    end_ods = EmptyOperator(
+        task_id="end_ods"
+    )
 
     build_dims = BashOperator(
         task_id="build_dims",
@@ -92,9 +96,26 @@ with DAG(
         task_id="build_fact_payments",
         bash_command=f"spark-submit {DWH}/build_fact_payments.py",
     )
+    end_dwh = EmptyOperator(
+        task_id="end_dwh"
+    )
 
-
-
+    mart_payment_summary = BashOperator(
+        task_id="mart_payment_summary",
+        bash_command=f"spark-submit {MART}/mart_payment_summary.py",
+    )
+    mart_high_value_customers = BashOperator(
+        task_id="mart_high_value_customers",
+        bash_command=f"spark-submit {MART}/mart_high_value_customers.py",
+    )
+    mart_geo_payment = BashOperator(
+        task_id="mart_geo_payment",
+        bash_command=f"spark-submit {MART}/mart_geo_payment.py",
+    )
+    mart_installment_impact = BashOperator(
+        task_id="mart_installment_impact",
+        bash_command=f"spark-submit {MART}/mart_installment_impact.py",
+    )
 
     end = EmptyOperator(
         task_id="end"
@@ -115,8 +136,13 @@ with DAG(
         transform_payments,
         transform_items,
         transform_customers,
-    ] >> build_dims >> [
+    ] >> end_ods >> build_dims >> [
         build_fact_orders,
         build_fact_payments
+    ] >> end_dwh >> [
+        mart_payment_summary,
+        mart_high_value_customers,
+        mart_geo_payment,
+        mart_installment_impact
     ] >> end
     
