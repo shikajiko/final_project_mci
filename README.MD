@@ -16,7 +16,26 @@ Orkestrasi ditangani oleh Apache Airflow yang didefinisikan dalam `dags/`. DAG m
 
 ---
 
-## Arsitektur Pipeline
+## Arsitektur 
+
+### Aristektur Data
+
+Medallion architecture adalah pendekatan arsitektur pemrosesan data yang membagi alur pengolahan data ke dalam beberapa layer secara bertahap. Secara konvensional, arsitektur ini terdiri dari tiga layer: bronze, silver, dan gold. Bronze layer menyimpan data mentah hasil ekstraksi tanpa modifikasi, silver layer berisi data yang telah dibersihkan dan divalidasi, sedangkan gold layer adalah data yang telah diagregasi dan siap digunakan untuk analisis serta pengambilan keputusan bisnis.
+
+Pada repositori ini, arsitektur medallion diimplementasikan dalam empat layer. Raw berperan sebagai bronze layer, menyimpan data hasil ingesti dari CSV apa adanya tanpa transformasi. ODS dan DWH berperan sebagai silver layer, dengan ODS menangani pembersihan dan validasi data, sedangkan DWH menyusunnya ke dalam star schema yang merepresentasikan makna bisnis. Terakhir, data mart berperan sebagai gold layer, menyediakan tabel yang telah diagregasi dan siap dikonsumsi langsung oleh Metabase untuk keperluan analisis Finance.
+
+Arsitektur ini dipilih karena memisahkan tanggung jawab setiap tahap pengolahan data secara eksplisit, sehingga memudahkan debugging, pengujian, dan pengembangan pipeline secara bertahap.
+
+<br>
+
+<p align="center">
+  <img src="images/medallion_architecture.png" alt="medallion" width="300">
+</p>
+
+<br>
+
+
+### Arsitektur Pipeline
 
 Pipeline ini diorkestrasikan oleh Apache Airflow, yang mendefinisikan dan mengurutkan seluruh task melalui satu DAG yang akan menentukan urutan eksekusi dari ekstraksi data hingga pengisian database mart. Apache Spark berperan sebagai engine transform, menangani seluruh pemrosesan data meliputi pembersihan, casting tipe data, derivasi kolom, dan agregasi di setiap layer.
 
@@ -27,6 +46,14 @@ Pipeline ini diorkestrasikan oleh Apache Airflow, yang mendefinisikan dan mengur
 **DWH**: layer DWH mengagregasi dan menggabungkan tabel-tabel ODS ke dalam star schema, membangun tabel dimensi (`dim_customer`, `dim_date`, `dim_payment_method`) dan tabel fakta (`fact_orders`, `fact_payments`) yang merepresentasikan makna bisnis. Hanya tabel yang relevan dengan persona Finance yang digunakan, yakni orders, orders_item, payments, customers, dan geolocation.
 
 **Mart**: layer mart melakukan pra-agregasi data DWH ke dalam empat tabel analitik yang dirancang khusus, masing-masing menjawab pertanyaan bisnis spesifik dari perspektif Finance. Metabase terhubung langsung ke layer mart untuk menyajikan dashboard tanpa memerlukan join atau agregasi kompleks pada saat query dijalankan.
+
+<br>
+
+<p align="center">
+  <img src="images/pipeline_flow.png" alt="medallion" width="1000">
+</p>
+
+<br>
 
 ---
 
@@ -54,6 +81,7 @@ Setelah seluruh service berjalan, buka Airflow UI di [http://localhost:8080](htt
 <p align="center">
   <img src="images/airflow_dashboard.png" alt="Airflow Dashboard">
 </p>
+
 ---
 
 ## English
@@ -70,6 +98,24 @@ Orchestration is handled by Apache Airflow, defined in `dags/`. The DAG sequence
 
 ## Architecture Overview
 
+### Data Architecture
+
+Medallion architecture is a data processing architectural approach that divides the data processing flow into several progressive layers. Conventionally, this architecture consists of three layers: bronze, silver, and gold. The bronze layer stores raw extracted data without modification, the silver layer contains data that has been cleaned and validated, while the gold layer holds data that has been aggregated and is ready for analysis and business decision-making.
+
+In this repository, the medallion architecture is implemented across four layers. Raw serves as the bronze layer, storing CSV-ingested data as-is without any transformation. ODS and DWH serve as the silver layer: ODS handles data cleaning and validation, while DWH organizes it into a star schema that carries business meaning. Finally, the data mart serves as the gold layer, providing pre-aggregated tables ready to be consumed directly by Metabase for Finance analytics.
+
+This architecture was chosen because it explicitly separates the responsibilities of each data processing stage, making debugging, testing, and incremental pipeline development more manageable.
+
+<br>
+
+<p align="center">
+  <img src="images/medallion_architecture.png" alt="medallion" width="300">
+</p>
+
+<br>
+
+### Pipeline Architecture 
+
 The pipeline is orchestrated by Apache Airflow, which defines and sequences all tasks through a single DAG — dictating execution order from ingestion through mart population. Apache Spark serves as the transformation engine, handling all data processing including cleaning, type casting, derivations, and aggregations across every layer transition.
 
 **Raw**: Raw data is ingested directly from CSV files into ClickHouse with minimal transformation. All columns are stored as `Nullable(String)` to preserve the source data as-is. Following ingestion, a data quality check is performed covering row counts, null rates, duplicate detection, and referential integrity before any transformation begins.
@@ -79,6 +125,14 @@ The pipeline is orchestrated by Apache Airflow, which defines and sequences all 
 **DWH**: The DWH layer aggregates and joins ODS tables into a star schema, constructing dimension tables (`dim_customer`, `dim_date`, `dim_payment_method`) and fact tables (`fact_orders`, `fact_payments`) that carry business meaning. Only tables relevant to the Finance persona are carried forward — orders, payments, customers, and geolocation.
 
 **Mart**: The mart layer pre-aggregates DWH data into four purpose-built analytical tables, each answering a specific Finance question. Metabase connects directly to the mart layer to serve dashboards without requiring complex joins or aggregations at query time.
+
+<br>
+
+<p align="center">
+  <img src="images/pipeline_flow.png" alt="medallion" width="1000">
+</p>
+
+<br>
 
 ---
 
