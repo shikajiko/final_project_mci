@@ -1,4 +1,5 @@
 from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 from common.ch_spark_utils import get_spark, get_client
 
 spark = get_spark()
@@ -10,6 +11,18 @@ customers = spark.createDataFrame(cust_data.result_rows, schema=cust_data.column
 
 geo_data = client_raw.query("SELECT * FROM geolocation")
 geo = spark.createDataFrame(geo_data.result_rows, schema=geo_data.column_names)
+
+window = Window.partitionBy("customer_id").orderBy(F.lit(1))
+customers = (
+    customers
+    .withColumn("row_num", F.row_number().over(window))
+    .filter(F.col("row_num") == 1)
+    .drop("row_num")
+)
+
+customers = customers.filter(
+    F.col("customer_id").isNotNull() & (F.col("customer_id") != "")
+)
 
 geo = (
     geo
@@ -36,7 +49,6 @@ df = (
         how="left"
     )
     .drop("geolocation_zip_code_prefix")
-    .filter(F.col("customer_id").isNotNull() & (F.col("customer_id") != ""))
 )
 
 client_ods.command("TRUNCATE TABLE IF EXISTS ods.customers")

@@ -1,4 +1,5 @@
 from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 from common.ch_spark_utils import get_spark, get_client
 
 spark = get_spark()
@@ -7,6 +8,17 @@ client_ods = get_client("ods")
 
 data = client_raw.query("SELECT * FROM order_items")
 df = spark.createDataFrame(data.result_rows, schema=data.column_names)
+
+window = Window.partitionBy("order_id", "order_item_id").orderBy(F.lit(1))
+df = (
+    df
+    .withColumn("row_num", F.row_number().over(window))
+    .filter(F.col("row_num") == 1)
+    .drop("row_num")
+)
+
+df = df.filter(F.col("price") > 0)
+df = df.filter(F.col("order_id").isNotNull() & (F.col("order_id") != ""))
 
 df = (
     df
