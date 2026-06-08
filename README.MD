@@ -50,9 +50,10 @@ docker compose up -d
 ```
 
 Setelah seluruh service berjalan, buka Airflow UI di [http://localhost:8080](http://localhost:8080) dan trigger DAG `groceria_pipeline` secara manual.
-<br><br>
-![Airflow Dashboard](images/airflow_dashboard.png)
-<br>
+
+<p align="center">
+  <img src="images/airflow_dashboard.png" alt="Airflow Dashboard">
+</p>
 ---
 
 ## English
@@ -105,6 +106,7 @@ docker compose up -d
 ```
 
 Once all services are running, open the Airflow UI at [http://localhost:8080](http://localhost:8080) and manually trigger the `groceria_pipeline` DAG.
-<br><br>
-![Airflow Dashboard](images/airflow_dashboard.png)
-<br>
+
+<p align="center">
+  <img src="images/airflow_dashboard.png" alt="Airflow Dashboard">
+</p>
