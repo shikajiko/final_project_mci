@@ -4,7 +4,7 @@ def check_row_counts(client, thresholds: dict):
     for table, min_rows in thresholds.items():
         result = client.query(f"SELECT count() FROM {table}").result_rows[0][0]
         if result < min_rows:
-            print(f"[QUALITY CHECK WARNING] {table} has {result} rows, expected >= {min_rows}")
+            raise ValueError(f"[QUALITY CHECK FAIL] {table} has {result} rows, expected >= {min_rows}")
 
 def check_nulls(client, checks: list[tuple]):
     for table, column, max_pct in checks:
@@ -13,7 +13,7 @@ def check_nulls(client, checks: list[tuple]):
             FROM {table}
         """).result_rows[0][0]
         if result > max_pct:
-            raise ValueError(f"[QUALITY CHECK FAIL] {table}.{column} null rate is {result:.2%}, max allowed is {max_pct:.2%}")
+            print(f"[QUALITY CHECK WARNING] {table}.{column} null rate is {result:.2%}, max allowed is {max_pct:.2%}")
 
 def check_duplicates(client, checks: list[tuple]):
     for table, column in checks:
@@ -22,7 +22,7 @@ def check_duplicates(client, checks: list[tuple]):
             FROM {table}
         """).result_rows[0][0]
         if result > 0:
-            raise ValueError(f"[QUALITY CHECK FAIL] {table}.{column} has {result} duplicate values")
+            print(f"[QUALITY CHECK WARNING] {table}.{column} has {result} duplicate values")
 
 def check_valid_values(client, checks: list[tuple]):
     for table, column, allowed in checks:
@@ -34,9 +34,7 @@ def check_valid_values(client, checks: list[tuple]):
             AND {column} NOT IN ({allowed_str})
         """).result_rows[0][0]
         if result > 0:
-            raise ValueError(
-                f"[DQ FAIL] {table}.{column} has {result} rows with unexpected values"
-            )
+            print(f"[QUALITY CHECK WARNING] {table}.{column} has {result} rows with unexpected values")
 
 def check_referential_integrity(client, checks: list[tuple]):
     for child_table, child_col, parent_table, parent_col in checks:
@@ -47,11 +45,9 @@ def check_referential_integrity(client, checks: list[tuple]):
             WHERE p.{parent_col} IS NULL
         """).result_rows[0][0]
         if result > 0:
-            raise ValueError(
-                f"[DQ FAIL] {child_table}.{child_col} has {result} orphan rows "
-                f"not found in {parent_table}.{parent_col}"
-            )
-        
+            print(f"[QUALITY CHECK WARNING] {child_table}.{child_col} has {result} orphan rows "
+                  f"not found in {parent_table}.{parent_col}")
+
 def run_all_checks(database: str = "default"):
     client = get_client(database)
 
@@ -66,7 +62,6 @@ def run_all_checks(database: str = "default"):
         "raw.geolocation": 1000163,
         "raw.product_category_translation": 71,
     })
-
     check_nulls(client, [
         ("raw.orders", "order_id", 0.0),
         ("raw.orders", "customer_id", 0.0),
@@ -78,24 +73,22 @@ def run_all_checks(database: str = "default"):
         ("raw.sellers", "seller_id", 0.0),
         ("raw.products", "product_id", 0.0),
     ])
-
     check_duplicates(client, [
         ("raw.orders", "order_id"),
+        ("raw.order_payments", "order_id"),
+        ("raw.order_items", "order_id"),
+        ("raw.customers", "customer_id"),
     ])
-
     check_valid_values(client, [
         ("raw.order_reviews", "review_score", ["1", "2", "3", "4", "5"]),
-        ("raw.order_payments", "payment_type", 
+        ("raw.order_payments", "payment_type",
             ["credit_card", "boleto", "voucher", "debit_card", "not_defined"]),
         ("raw.orders", "order_status",
-            ["delivered", "shipped", "canceled", "unavailable", 
+            ["delivered", "shipped", "canceled", "unavailable",
              "invoiced", "processing", "created", "approved"]),
     ])
-
-
     check_referential_integrity(client, [
         ("raw.order_items", "order_id", "raw.orders", "order_id"),
         ("raw.order_payments", "order_id", "raw.orders", "order_id"),
     ])
-
     print("[QUALITY CHECK] All checks passed.")

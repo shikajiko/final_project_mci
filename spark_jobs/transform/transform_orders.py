@@ -1,5 +1,4 @@
-import sys
-import os
+from pyspark.sql.window import Window
 from pyspark.sql import functions as F
 from common.ch_spark_utils import get_spark, get_client
 
@@ -9,6 +8,20 @@ client_ods = get_client("ods")
 
 data = client_raw.query("SELECT * FROM orders")
 df = spark.createDataFrame(data.result_rows, schema=data.column_names)
+
+window = Window.partitionBy("order_id").orderBy(F.lit(1))
+df = (
+    df
+    .withColumn("row_num", F.row_number().over(window))
+    .filter(F.col("row_num") == 1)
+    .drop("row_num")
+)
+
+df = df.filter(F.col("order_id").isNotNull() & (F.col("order_id") != ""))
+
+valid_statuses = ["delivered", "shipped", "canceled", "unavailable",
+                  "invoiced", "processing", "created", "approved"]
+df = df.filter(F.col("order_status").isin(valid_statuses))
 
 timestamp_cols = [
     "order_purchase_timestamp",

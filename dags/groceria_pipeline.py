@@ -5,10 +5,11 @@ from airflow.operators.python import PythonOperator
 from utils.dq_checks import run_all_checks
 from datetime import datetime
 
-SPARK_JOBS = "/opt/airflow/spark_jobs"
-LOAD_CSV   = f"{SPARK_JOBS}/ingest/load_csv_to_raw.py"
-DATASETS   = "/datasets"
-TRANSFORM = f"{SPARK_JOBS}/transform"
+SPARK_JOBS  = "/opt/airflow/spark_jobs"
+LOAD_CSV    = f"{SPARK_JOBS}/ingest/load_csv_to_raw.py"
+DATASETS    = "/datasets"
+TRANSFORM   = f"{SPARK_JOBS}/transform"
+DWH         = f"{SPARK_JOBS}/build"
 
 with DAG(
     dag_id="groceria_pipeline",
@@ -23,7 +24,6 @@ with DAG(
         task_id="ingest_orders",
         bash_command=f"python {LOAD_CSV} {DATASETS}/orders.csv raw.orders"
     )
-
     ingest_customers = BashOperator(
         task_id="ingest_customers",
         bash_command=f"python {LOAD_CSV} {DATASETS}/customers.csv raw.customers"
@@ -57,7 +57,6 @@ with DAG(
         bash_command=f"python {LOAD_CSV} {DATASETS}/category_translation.csv raw.product_category_translation"
     )
 
-
     run_dq_checks = PythonOperator(
         task_id="run_dq_checks",
         python_callable=run_all_checks,
@@ -68,21 +67,34 @@ with DAG(
         task_id="transform_orders",
         bash_command=f"spark-submit {TRANSFORM}/transform_orders.py"
     )
-
     transform_payments = BashOperator(
         task_id="transform_payments",
         bash_command=f"spark-submit {TRANSFORM}/transform_payments.py"
     )
-
     transform_items = BashOperator(
         task_id="transform_items",
         bash_command=f"spark-submit {TRANSFORM}/transform_items.py"
     )
-
     transform_customers = BashOperator(
         task_id="transform_customers",
         bash_command=f"spark-submit {TRANSFORM}/transform_customers.py"
     )
+
+    build_dims = BashOperator(
+        task_id="build_dims",
+        bash_command=f"spark-submit {DWH}/build_dims.py",
+    )
+    build_fact_orders = BashOperator(
+        task_id="build_fact_orders",
+        bash_command=f"spark-submit {DWH}/build_fact_orders.py",
+    )
+    build_fact_payments = BashOperator(
+        task_id="build_fact_payments",
+        bash_command=f"spark-submit {DWH}/build_fact_payments.py",
+    )
+
+
+
 
     end = EmptyOperator(
         task_id="end"
@@ -103,4 +115,8 @@ with DAG(
         transform_payments,
         transform_items,
         transform_customers,
+    ] >> build_dims >> [
+        build_fact_orders,
+        build_fact_payments
     ] >> end
+    
