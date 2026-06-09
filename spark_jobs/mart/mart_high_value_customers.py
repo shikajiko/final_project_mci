@@ -1,4 +1,5 @@
 from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 from common.ch_spark_utils import get_spark, get_client
 
 spark = get_spark()
@@ -11,33 +12,11 @@ payments  = spark.createDataFrame(pay_data.result_rows, schema=pay_data.column_n
 cust_data = client_dwh.query("SELECT customer_id, customer_unique_id FROM dim_customer")
 customers = spark.createDataFrame(cust_data.result_rows, schema=cust_data.column_names)
 
-threshold = (
-    payments
-    .select(F.expr("percentile_approx(payment_value, 0.75)").alias("p75"))
-    .collect()[0]["p75"]
-)
+payments_with_uid = payments.join(customers, on="customer_id", how="left")
 
-high_value = payments.filter(F.col("payment_value") >= threshold)
-
-payment_mode = (
-    high_value
-    .groupBy("customer_id", "payment_type")
-    .agg(F.count("order_id").alias("type_count"))
-    .withColumn(
-        "rank",
-        F.row_number().over(
-            __import__("pyspark.sql.window", fromlist=["Window"])
-            .Window.partitionBy("customer_id")
-            .orderBy(F.col("type_count").desc())
-        )
-    )
-    .filter(F.col("rank") == 1)
-    .select("customer_id", F.col("payment_type").alias("preferred_payment_type"))
-)
-
-df = (
-    high_value
-    .groupBy("customer_id", "customer_state")
+customer_spend = (
+    payments_with_uid
+    .groupBy("customer_unique_id", "customer_state")
     .agg(
         F.countDistinct("order_id").alias("total_orders"),
         F.sum("payment_value").alias("total_payment_value"),
@@ -46,8 +25,37 @@ df = (
         F.avg("payment_installments").alias("avg_installments"),
     )
     .withColumn("pct_installment_usage", F.col("pct_installment_usage") * 100)
-    .join(payment_mode, on="customer_id", how="left")
-    .join(customers,    on="customer_id", how="left")
+)
+
+threshold = (
+    customer_spend
+    .select(F.expr("percentile_approx(total_payment_value, 0.75)").alias("p75"))
+    .collect()[0]["p75"]
+)
+
+high_value_customers = customer_spend.filter(F.col("total_payment_value") >= threshold)
+
+qualifying_ids = high_value_customers.select("customer_unique_id")
+
+payment_mode = (
+    payments_with_uid
+    .join(qualifying_ids, on="customer_unique_id", how="inner")
+    .groupBy("customer_unique_id", "payment_type")
+    .agg(F.count("order_id").alias("type_count"))
+    .withColumn(
+        "rank",
+        F.row_number().over(
+            Window.partitionBy("customer_unique_id")
+            .orderBy(F.col("type_count").desc())
+        )
+    )
+    .filter(F.col("rank") == 1)
+    .select("customer_unique_id", F.col("payment_type").alias("preferred_payment_type"))
+)
+
+df = (
+    high_value_customers
+    .join(payment_mode, on="customer_unique_id", how="left")
     .select(
         "customer_unique_id",
         "customer_state",
