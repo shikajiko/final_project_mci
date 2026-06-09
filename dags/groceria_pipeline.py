@@ -116,6 +116,19 @@ with DAG(
         task_id="mart_installment_impact",
         bash_command=f"spark-submit {MART}/mart_installment_impact.py",
     )
+    mart_revenue_concentration = BashOperator(
+        task_id="mart_revenue_concentration",
+        bash_command="spark-submit /opt/airflow/spark_jobs/mart/mart_revenue_concentration.py",
+    )
+    mart_payment_distribution = BashOperator(
+        task_id="mart_payment_distribution",
+        bash_command="spark-submit /opt/airflow/spark_jobs/mart/mart_payment_distribution.py",
+    )
+    mart_revenue_leakage = BashOperator(
+        task_id="mart_revenue_leakage",
+        bash_command="spark-submit /opt/airflow/spark_jobs/mart/mart_revenue_leakage.py",
+    )
+
 
     end = EmptyOperator(
         task_id="end"
@@ -143,6 +156,9 @@ with DAG(
         mart_payment_summary,
         mart_high_value_customers,
         mart_geo_payment,
-        mart_installment_impact
+        mart_installment_impact,
+        mart_revenue_concentration,
+        mart_payment_distribution,
+        mart_revenue_leakage
     ] >> end
     
