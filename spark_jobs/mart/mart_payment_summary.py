@@ -24,8 +24,9 @@ df = (
     )
     .withColumn(
         "pct_installment",
-        F.col("total_installment_users") / F.col("total_transactions") * 100
+        F.round(F.col("total_installment_users") / F.col("total_transactions") * 100, 2)
     )
+    .orderBy("year", "month", "payment_type")
 )
 
 client_mart.command("TRUNCATE TABLE IF EXISTS mart.payment_summary")
