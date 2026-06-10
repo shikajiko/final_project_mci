@@ -1,16 +1,24 @@
 -- D5-Q1: Pareto summary — revenue share by customer top percentile
 SELECT
-    multiIf(rank_pct <= 10, 'Top 10%',
-            rank_pct <= 20, 'Top 20%',
-            rank_pct <= 30, 'Top 30%',
-            rank_pct <= 50, 'Top 50%',
-            'Bottom 50%')           AS customer_segment,
-    COUNT(*)                        AS customer_count,
-    ROUND(SUM(total_payment_value), 2)  AS segment_revenue,
-    ROUND(MAX(cumulative_revenue_pct), 2) AS cumulative_revenue_pct
-FROM mart.revenue_concentration
-GROUP BY customer_segment
-ORDER BY MIN(rank_pct);
+    customer_segment,
+    SUM(customer_count) OVER (ORDER BY min_rank) AS cumulative_customers,
+    SUM(segment_revenue) OVER (ORDER BY min_rank) AS cumulative_revenue,
+    cumulative_revenue_pct
+FROM (
+    SELECT
+        multiIf(rank_pct <= 10, 'Top 10%',
+                rank_pct <= 20, 'Top 20%',
+                rank_pct <= 30, 'Top 30%',
+                rank_pct <= 50, 'Top 50%',
+                'Bottom 50%')                       AS customer_segment,
+        COUNT(*)                                    AS customer_count,
+        ROUND(SUM(total_payment_value), 2)          AS segment_revenue,
+        ROUND(MAX(cumulative_revenue_pct), 2)       AS cumulative_revenue_pct,
+        MIN(rank_pct)                               AS min_rank
+    FROM mart.revenue_concentration
+    GROUP BY customer_segment
+    ORDER BY min_rank
+)
 
 -- D5-Q2: Lorenz curve data (rank_pct vs cumulative_revenue_pct)
 SELECT
