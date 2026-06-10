@@ -10,6 +10,7 @@ payments = spark.createDataFrame(pay_data.result_rows, schema=pay_data.column_na
 
 ord_data = client_dwh.query("SELECT order_id, total_order_value FROM fact_orders")
 orders   = spark.createDataFrame(ord_data.result_rows, schema=ord_data.column_names)
+orders   = orders.filter(F.col("total_order_value").isNotNull())
 orders   = orders.withColumnRenamed("total_order_value", "order_total_value")
 
 joined = payments.join(orders, on="order_id", how="left")

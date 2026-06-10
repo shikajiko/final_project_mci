@@ -78,6 +78,13 @@ payment_mode = (
     .select("customer_unique_id", F.col("payment_type").alias("preferred_payment_type"))
 )
 
+avg_interpurchase_days = F.when(
+    F.col("total_orders") > 1,
+    F.datediff(F.col("last_order_date").cast("date"), F.col("first_order_date").cast("date"))
+    / (F.col("total_orders") - 1)
+).otherwise(F.lit(180.0))
+
+
 df = (
     high_value_customers
     .join(payment_mode, on="customer_unique_id", how="left")
@@ -86,11 +93,9 @@ df = (
         "clv_estimate",
         F.round(
             F.col("avg_payment_value")
-            * F.col("total_orders")
-            * (F.lit(365.0) / F.greatest(F.col("recency_days").cast("double"), F.lit(1.0))),
-            2
+            * (F.lit(365.0) / F.greatest(avg_interpurchase_days, F.lit(30.0))),
+            2)
         )
-    )
     .select(
         "customer_unique_id",
         "customer_state",

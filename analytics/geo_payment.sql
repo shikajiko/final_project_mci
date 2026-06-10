@@ -3,7 +3,7 @@ SELECT
     customer_state,
     SUM(total_transactions)             AS total_transactions,
     ROUND(SUM(total_payment_value), 2)  AS total_revenue,
-    ROUND(AVG(avg_payment_value), 2)    AS avg_payment_value,
+    ROUND(SUM(total_payment_value) / NULLIF(SUM(total_transactions), 0), 2)    AS avg_payment_value,
     SUM(high_value_customer_count)      AS total_hvc_count,
     ROUND(AVG(pct_high_value), 2)       AS avg_pct_high_value,
     ROUND(AVG(avg_lat), 4)              AS avg_lat,
@@ -44,7 +44,7 @@ SELECT
     customer_state,
     SUM(total_transactions)             AS total_transactions,
     ROUND(SUM(total_payment_value), 2)  AS total_revenue,
-    ROUND(AVG(avg_payment_value), 2)    AS avg_payment_value,
+    ROUND(SUM(total_payment_value) / NULLIF(SUM(total_transactions), 0), 2)    AS avg_payment_value,
     SUM(high_value_customer_count)      AS hvc_count,
     ROUND(AVG(avg_lat), 4)              AS lat,
     ROUND(AVG(avg_lng), 4)              AS lng

@@ -6,10 +6,10 @@ from utils.dq_checks import run_all_checks
 from datetime import datetime
 
 SPARK_JOBS  = "/opt/airflow/spark_jobs"
-LOAD_CSV    = f"{SPARK_JOBS}/ingest/load_csv_to_raw.py"
+LOAD_CSV    = f"{SPARK_JOBS}/raw/load_csv_to_raw.py"
 DATASETS    = "/datasets"
-TRANSFORM   = f"{SPARK_JOBS}/transform"
-DWH         = f"{SPARK_JOBS}/build"
+TRANSFORM   = f"{SPARK_JOBS}/ods"
+DWH         = f"{SPARK_JOBS}/dwh"
 MART        = f"{SPARK_JOBS}/mart"
 
 with DAG(

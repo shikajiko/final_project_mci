@@ -17,7 +17,10 @@ df = (
     .drop("row_num")
 )
 
-df = df.filter(F.col("price") > 0)
+df = (  df.withColumn("price", F.col("price").cast("double")) 
+          .filter(F.col("price").isNotNull() & (F.col("price") > 0))
+        )
+
 df = df.filter(F.col("order_id").isNotNull() & (F.col("order_id") != ""))
 
 df = (

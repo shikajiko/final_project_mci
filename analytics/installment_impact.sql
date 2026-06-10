@@ -1,4 +1,4 @@
--- D4-Q1: Installment bucket overview
+-- Installment bucket overview
 SELECT
     installment_bucket,
     total_transactions,
@@ -10,7 +10,7 @@ SELECT
 FROM mart.installment_impact
 ORDER BY avg_payment_value DESC;
 
--- D4-Q2: AOV lift from installments vs single payment
+-- AOV lift from installments vs single payment
 SELECT
     installment_bucket,
     ROUND(avg_payment_value, 2) AS avg_payment_value,
@@ -26,7 +26,7 @@ SELECT
 FROM mart.installment_impact
 ORDER BY avg_payment_value DESC;
 
--- D4-Q3: Payment method distribution statistics (RQ3.2)
+-- Payment method distribution statistics (RQ3.2)
 SELECT
     payment_type,
     transaction_count,
@@ -40,7 +40,7 @@ SELECT
 FROM mart.payment_distribution
 ORDER BY mean_payment_value DESC;
 
--- D4-Q4: Revenue uplift simulation (RQ4.4)
+-- Revenue uplift simulation (RQ4.4)
 -- Simulates uplift if 10%/25% of single-payment credit card users moved to 4-6x installments
 WITH single_pay AS (
     SELECT avg_payment_value AS single_aov, total_transactions AS single_count
